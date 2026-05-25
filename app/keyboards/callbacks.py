@@ -29,6 +29,15 @@ class ConfirmReminderCallback(CallbackData, prefix="confirm"):
     action: str
 
 
+class SharedReminderCallback(CallbackData, prefix="shared"):
+    action: str
+    reminder_id: int
+
+
+class SharedJoinCallback(CallbackData, prefix="sjoin"):
+    action: str
+    reminder_id: int
+
+
 class SettingsCallback(CallbackData, prefix="settings"):
     action: str
-

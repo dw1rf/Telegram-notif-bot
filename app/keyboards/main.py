@@ -15,6 +15,14 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         callback_data=MainMenuCallback(action="list"),
     )
     builder.button(
+        text="👥 Создать общее напоминание",
+        callback_data=MainMenuCallback(action="create_shared"),
+    )
+    builder.button(
+        text="👥 Мои общие напоминания",
+        callback_data=MainMenuCallback(action="shared_list"),
+    )
+    builder.button(
         text="🔁 Повторяющиеся",
         callback_data=MainMenuCallback(action="recurring"),
     )
@@ -24,4 +32,3 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
     )
     builder.adjust(1)
     return builder.as_markup()
-

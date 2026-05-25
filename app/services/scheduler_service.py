@@ -6,11 +6,14 @@ from datetime import timedelta
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.database.models import RepeatType
+from app.database.models import ReminderDeliveryStatus, RepeatType, SharedReminderMemberStatus
 from app.keyboards.reminders import fired_reminder_keyboard
+from app.keyboards.shared_reminders import shared_delivery_keyboard, shared_delivery_text
 from app.services.reminder_service import ReminderService
+from app.services.shared_reminder_service import SharedReminderService
 from app.utils.timezone import calculate_next_occurrence, utc_now
 
 
@@ -26,6 +29,15 @@ class SchedulerService:
     def start(self) -> None:
         if not self.scheduler.running:
             self.scheduler.start()
+        if self.scheduler.get_job("shared_reminders:due") is None:
+            self.scheduler.add_job(
+                self.send_due_shared_reminders,
+                trigger=IntervalTrigger(seconds=30),
+                id="shared_reminders:due",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+            )
 
     async def shutdown(self) -> None:
         if self.scheduler.running:
@@ -117,3 +129,43 @@ class SchedulerService:
             self.schedule_reminder(reminder.id, new_time)
             return True
 
+    async def send_due_shared_reminders(self) -> None:
+        async with self.session_factory() as session:
+            service = SharedReminderService(session)
+            reminders = await service.get_due_reminders()
+
+            for reminder in reminders:
+                active_members = [
+                    member
+                    for member in reminder.members
+                    if member.status == SharedReminderMemberStatus.ACTIVE and member.user is not None
+                ]
+
+                for member in active_members:
+                    try:
+                        await self.bot.send_message(
+                            chat_id=member.user.telegram_id,
+                            text=shared_delivery_text(reminder),
+                            reply_markup=shared_delivery_keyboard(reminder.id),
+                        )
+                    except Exception as error:
+                        logger.warning(
+                            "Failed to send shared reminder %s to user %s",
+                            reminder.id,
+                            member.user_id,
+                        )
+                        await service.log_delivery(
+                            reminder.id,
+                            member.user_id,
+                            ReminderDeliveryStatus.FAILED,
+                            str(error),
+                        )
+                        continue
+
+                    await service.log_delivery(
+                        reminder.id,
+                        member.user_id,
+                        ReminderDeliveryStatus.SENT,
+                    )
+
+                await service.advance_after_delivery(reminder)
