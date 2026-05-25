@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models import User
 from app.keyboards.callbacks import MainMenuCallback
 from app.keyboards.main import main_menu_keyboard
+from app.keyboards.reminders import main_menu_text
 from app.keyboards.shared_reminders import shared_join_keyboard, shared_reminder_card_text
 from app.services.shared_reminder_service import SharedReminderService, hash_invite_token
+from app.services.ui_service import remember_ui_message, render_callback
 
 
 router = Router()
@@ -50,19 +52,15 @@ async def command_start(
         )
         return
 
-    await message.answer(
-        "🔔 Напоминалка",
-        reply_markup=main_menu_keyboard(),
-    )
+    await state.clear()
+    sent = await message.answer(main_menu_text(), reply_markup=main_menu_keyboard())
+    await remember_ui_message(state, sent)
 
 
 @router.callback_query(MainMenuCallback.filter(F.action == "back_main"))
-async def back_to_main(callback: CallbackQuery) -> None:
-    await callback.message.edit_text(
-        "🔔 Напоминалка",
-        reply_markup=main_menu_keyboard(),
-    )
-    await callback.answer()
+async def back_to_main(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await render_callback(callback, state, main_menu_text(), reply_markup=main_menu_keyboard())
 
 
 @router.callback_query(MainMenuCallback.filter(F.action == "noop"))

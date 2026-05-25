@@ -9,6 +9,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base, TimestampMixin
 
 
+def enum_values(enum_class: type[Enum]) -> list[str]:
+    return [item.value for item in enum_class]
+
+
 class RepeatType(str, Enum):
     NONE = "none"
     DAILY = "daily"
@@ -70,7 +74,7 @@ class Reminder(TimestampMixin, Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     remind_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     repeat_type: Mapped[RepeatType] = mapped_column(
-        SqlEnum(RepeatType, name="repeat_type"),
+        SqlEnum(RepeatType, name="repeat_type", values_callable=enum_values),
         default=RepeatType.NONE,
         nullable=False,
     )
@@ -88,9 +92,11 @@ class SharedReminder(TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     remind_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow", nullable=False)
-    repeat_rule: Mapped[RepeatType | None] = mapped_column(SqlEnum(RepeatType, name="shared_repeat_rule"))
+    repeat_rule: Mapped[RepeatType | None] = mapped_column(
+        SqlEnum(RepeatType, name="shared_repeat_rule", values_callable=enum_values)
+    )
     status: Mapped[SharedReminderStatus] = mapped_column(
-        SqlEnum(SharedReminderStatus, name="shared_reminder_status"),
+        SqlEnum(SharedReminderStatus, name="shared_reminder_status", values_callable=enum_values),
         default=SharedReminderStatus.ACTIVE,
         nullable=False,
         index=True,
@@ -122,12 +128,12 @@ class SharedReminderMember(Base):
     username: Mapped[str | None] = mapped_column(String(255))
     first_name: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[SharedReminderMemberRole] = mapped_column(
-        SqlEnum(SharedReminderMemberRole, name="shared_reminder_member_role"),
+        SqlEnum(SharedReminderMemberRole, name="shared_reminder_member_role", values_callable=enum_values),
         default=SharedReminderMemberRole.MEMBER,
         nullable=False,
     )
     status: Mapped[SharedReminderMemberStatus] = mapped_column(
-        SqlEnum(SharedReminderMemberStatus, name="shared_reminder_member_status"),
+        SqlEnum(SharedReminderMemberStatus, name="shared_reminder_member_status", values_callable=enum_values),
         default=SharedReminderMemberStatus.ACTIVE,
         nullable=False,
         index=True,
@@ -155,7 +161,7 @@ class ReminderDeliveryLog(Base):
     reminder_id: Mapped[int] = mapped_column(ForeignKey("shared_reminders.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     status: Mapped[ReminderDeliveryStatus] = mapped_column(
-        SqlEnum(ReminderDeliveryStatus, name="reminder_delivery_status"),
+        SqlEnum(ReminderDeliveryStatus, name="reminder_delivery_status", values_callable=enum_values),
         nullable=False,
         index=True,
     )
