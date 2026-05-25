@@ -74,8 +74,17 @@ async def _show_user_shared_reminders(message: Message, session: AsyncSession, d
     )
 
 
-@router.message(Command("new_shared_reminder"))
-@router.message(F.text.casefold().startswith("/общее_напоминание"))
+@router.message(Command("new_shared_reminder", "new_shared", "shared", "sh", "ns"))
+@router.message(
+    F.text.casefold().in_(
+        {
+            "/общее_напоминание",
+            "/общее",
+            "/общ",
+            "/создать_общее",
+        }
+    )
+)
 async def start_create_shared_reminder(message: Message, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(SharedReminderCreateState.waiting_title)
@@ -165,8 +174,17 @@ async def save_shared_reminder(
     await callback.answer()
 
 
-@router.message(Command("my_shared_reminders"))
-@router.message(F.text.casefold().startswith("/мои_общие_напоминания"))
+@router.message(Command("my_shared_reminders", "my_shared", "shared_list", "ms"))
+@router.message(
+    F.text.casefold().in_(
+        {
+            "/мои_общие_напоминания",
+            "/мои_общие",
+            "/общие",
+            "/мо",
+        }
+    )
+)
 async def show_my_shared_reminders(message: Message, session: AsyncSession, db_user: User) -> None:
     await _show_user_shared_reminders(message, session, db_user)
 

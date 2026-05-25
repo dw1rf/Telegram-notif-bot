@@ -35,7 +35,7 @@ async def set_main_commands(bot: Bot) -> None:
     await bot.set_my_commands(
         [
             BotCommand(command="start", description="Открыть главное меню"),
-            BotCommand(command="new_shared_reminder", description="Создать общее напоминание"),
-            BotCommand(command="my_shared_reminders", description="Мои общие напоминания"),
+            BotCommand(command="shared", description="Создать общее напоминание"),
+            BotCommand(command="my_shared", description="Мои общие напоминания"),
         ]
     )
