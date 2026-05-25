@@ -5,8 +5,11 @@ import logging
 
 from app.bot import create_bot, create_dispatcher, set_main_commands
 from app.config import get_settings
-from app.database.session import SessionFactory
+from app.database.session import SessionFactory, init_db
 from app.services.scheduler_service import SchedulerService
+
+
+logger = logging.getLogger(__name__)
 
 
 def setup_logging(level: str) -> None:
@@ -19,6 +22,8 @@ def setup_logging(level: str) -> None:
 async def main() -> None:
     settings = get_settings()
     setup_logging(settings.log_level)
+    logger.info("Using database: %s", settings.database_url)
+    await init_db()
 
     bot = create_bot(settings)
     dispatcher = create_dispatcher()

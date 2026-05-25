@@ -2,8 +2,15 @@ services:
   bot:
     build: .
     env_file:
-      - .env
+      - path: .env
+        required: false
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Europe/Moscow}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./data:/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
-
