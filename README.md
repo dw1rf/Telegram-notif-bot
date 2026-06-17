@@ -154,6 +154,48 @@ docker compose up --build -d
 docker compose down
 ```
 
+## Мониторинг через Uptime Kuma
+
+Бот поддерживает два режима мониторинга без дополнительных зависимостей.
+
+Для BotHost удобнее использовать `Push` monitor, потому что внешний HTTP-порт у бота может быть недоступен.
+
+1. В Uptime Kuma создайте монитор типа `Push`.
+2. Скопируйте выданный Push URL.
+3. Вставьте его в `.env`:
+
+```env
+UPTIME_ENABLED=true
+UPTIME_PUSH_URL=https://your-kuma.example.com/api/push/your-token
+UPTIME_PUSH_INTERVAL_SECONDS=60
+```
+
+Бот будет сам отправлять heartbeat в Uptime Kuma после полного запуска.
+
+Если бот запущен на VPS или в Docker и Uptime Kuma может обращаться к нему по сети, можно включить HTTP endpoint:
+
+```env
+UPTIME_ENABLED=true
+UPTIME_HTTP_ENABLED=true
+UPTIME_HOST=0.0.0.0
+UPTIME_PORT=8080
+UPTIME_PATH=/healthz
+```
+
+В этом случае создайте монитор типа `HTTP(s)`:
+
+```text
+http://<host>:8080/healthz
+```
+
+Если Uptime Kuma запущена в той же Docker-сети, можно использовать адрес:
+
+```text
+http://bot:8080/healthz
+```
+
+HTTP endpoint возвращает `200 OK`, когда бот полностью запустился, и `503 Service Unavailable` во время старта или остановки.
+
 В `docker-compose.yml` уже добавлен:
 
 ```yaml
